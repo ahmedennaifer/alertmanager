@@ -1,0 +1,17 @@
+[project]
+name = "autoalert"
+version = "0.1.0"
+dependencies = [
+    "fastapi>=0.116.1",
+    "google-cloud-pubsub>=2.31.0",
+    "haystack-ai>=2.15.2",
+    "python-dotenv>=1.1.1",
+    "uvicorn>=0.35.0",
+]
+
+[tool.pip]
+extra-index-url = ["https://download.pytorch.org/whl/cpu"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

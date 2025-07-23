@@ -1,0 +1,15 @@
+.venv/
+.venv/*
+
+*.tfvars
+*.tfstate*
+
+.terraform/
+.terraform/*
+.terraform.lock.hcl
+autoalert.egg-info
+autoalert.egg-info/
+terraform.tfstate
+terraform.tfstate.backup
+
+
