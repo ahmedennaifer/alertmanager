@@ -3,12 +3,6 @@ provider "google" {
   region  = var.location
 }
 
-
-resource "google_pubsub_topic" "topic" {
-  name = "job-topic"
-}
-
-
 resource "google_service_account" "scheduler_sa" {
   account_id   = "scheduler-sa"
 }
@@ -20,6 +14,7 @@ resource "google_cloud_run_service_iam_member" "scheduler_invoker" {
   service  = google_cloud_run_service.default.name
   role     = "roles/run.invoker"
   member   = "serviceAccount:${google_service_account.scheduler_sa.email}"
+  depends_on = [google_cloud_run_service.default,google_cloud_run_service_iam_member.scheduler_invoker]
 }
 
 resource "google_cloud_scheduler_job" "job" {
@@ -27,14 +22,15 @@ resource "google_cloud_scheduler_job" "job" {
   schedule   = "*/1 * * * *"
   region     = "europe-west6"
   time_zone  = "UTC"
-  depends_on = [google_cloud_run_service.default]
+  depends_on = [google_cloud_run_service.default,google_cloud_run_service_iam_member.scheduler_invoker
+]
 
   http_target {
     http_method = "GET"
     uri         = "${google_cloud_run_service.default.status[0].url}/generate?count=5"
     oidc_token {
       service_account_email = google_service_account.scheduler_sa.email
-      audience = google_cloud_run_service.default.status[0].url  # ADD THIS
+      audience = google_cloud_run_service.default.status[0].url
     }
   }
 }
@@ -56,7 +52,6 @@ resource "google_pubsub_topic_iam_member" "publisher" {
   member = var.member2
   role   = var.pubsub_role
 }
-
 
 
 resource "google_secret_manager_secret_iam_member" "llm_key_access" {
