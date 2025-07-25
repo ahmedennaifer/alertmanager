@@ -3,6 +3,7 @@ name = "autoalert"
 version = "0.1.0"
 dependencies = [
     "fastapi>=0.116.1",
+    "google-ai-haystack>=5.3.0",
     "google-cloud-pubsub>=2.31.0",
     "haystack-ai>=2.15.2",
     "python-dotenv>=1.1.1",

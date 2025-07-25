@@ -37,19 +37,23 @@ def generate_alerts(count: int = 3):
     ag = AlertGenerator()
     try:
         res = ag.run(count)
-        message_data = json.dumps(
-            {"alerts": res, "count": count, "timestamp": datetime.now().isoformat()}
-        ).encode("utf-8")
-        logger.debug(f"Successfully generated {count} alerts..")
-        future = get_future(message_data)
-        message_id = future.result(timeout=10)
-        logger.info(f"Publishing {message_id} with success")
-        return {
-            "status": "success",
-            "count": count,
-            "message_id": message_id,
-            "result": res,
-        }
+        alerts = res["alerts"]
+        for alert in alerts:
+            message_data = json.dumps(
+                {
+                    "alert": alert,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            ).encode("utf-8")
+            logger.debug(f"Successfully generated {count} alerts..")
+            future = get_future(message_data)
+            message_id = future.result(timeout=10)
+            logger.info(f"Publishing {message_id} with success")
+            return {
+                "status": "success",
+                "count": count,
+                "result": alerts,
+            }
     except Exception as e:
         logger.error(f"Error: {e}")
         return {"status": "error", "reason": f"{e}"}
@@ -66,6 +70,7 @@ def debug_config():
         "PROJECT_ID": os.environ.get("PROJECT_ID"),
         "TOPIC_NAME": os.environ.get("TOPIC_NAME"),
         "topic_path": Config().topic_path,
+        "key": os.environ.get("GOOGLE_API_KEY"),
     }
 
 
