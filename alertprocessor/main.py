@@ -1,34 +1,11 @@
-from google.cloud.pubsub_v1 import SubscriberClient
-from google.cloud.pubsub_v1.subscriber.message import Message
-
-import os
-from dotenv import load_dotenv
+import json
+import base64
 
 
-load_dotenv()
-
-
-def subscribe():
-    subscriber = SubscriberClient()
-    subscription_path = subscriber.subscription_path(
-        os.environ["PROJECT_ID"], os.environ["SUBSCRIPTION"]
-    )
-    with subscriber:
-        try:
-            streaming_pull_future = subscriber.subscribe(
-                subscription_path, callback=callback
-            )
-            streaming_pull_future.result()
-
-        except KeyboardInterrupt:
-            streaming_pull_future.cancel()
-            print("exiting..\n")
-
-
-def callback(message: Message) -> None:
-    print(message.data)
-    message.ack()
-
-
-if __name__ == "__main__":
-    subscribe()
+def process_alerts(event, context):
+    print(f"event data: {event}")
+    message_data = base64.b64decode(event["data"]).decode("utf-8")
+    print(f"message: {message_data}")
+    alerts = json.loads(message_data)
+    print(f"alerts: {alerts}")
+    return {"status": "processed", "count": len(alerts)}

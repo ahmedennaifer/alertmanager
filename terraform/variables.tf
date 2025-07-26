@@ -14,12 +14,8 @@ variable "location" {
   type        = string
 }
 
-variable "member" {
-  description = "member creds"
-  type        = string
-}
 
-variable "member2" {
+variable "member" {
   type = string
 }
 
@@ -36,9 +32,6 @@ variable "pubsub_subscriber" {
 }
 
 variable "pubsub_role" {
-  type = string
-}
-variable "token" {
   type = string
 }
 

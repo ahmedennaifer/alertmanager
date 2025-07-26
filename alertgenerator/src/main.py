@@ -38,22 +38,18 @@ def generate_alerts(count: int):
     pub = Publisher()
     try:
         logger.debug("started alert generation")
-        alerts = ag.run(count)["alerts"]
+        alerts = ag.run(count)
         logger.info(f"generated {len(alerts)} alerts")
-        for alert in alerts:
-            message_data = json.dumps(
-                {
-                    "alert": alert,
-                    "timestamp": datetime.now().isoformat(),
-                }
-            ).encode("utf-8")
-
-            logger.debug(
-                f"publishing started for message: {message_data.decode('utf-8')}"
-            )
-            future = pub.publish(message_data)
-            message_id = future.result(timeout=10)
-            logger.info(f"published message with id:{message_id} with success")
+        message_data = json.dumps(
+            {
+                "alerts": alerts,
+                "timestamp": datetime.now().isoformat(),
+            }
+        ).encode("utf-8")
+        logger.debug("publishing started for messages")
+        future = pub.publish(message_data)
+        message_id = future.result(timeout=10)
+        logger.info(f"published message with id:{message_id} with success")
 
         return {
             "status": "success",
