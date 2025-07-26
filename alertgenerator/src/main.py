@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from alert_generator import AlertGenerator
 from google.cloud import pubsub_v1
 from datetime import datetime
+from typing import Any
 
 import os
 import json
@@ -13,31 +14,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class Config:
+class Publisher:
     def __init__(self) -> None:
-        self.publisher = pubsub_v1.PublisherClient()
-        self.topic_path = self.publisher.topic_path(
+        self._publisher = pubsub_v1.PublisherClient()
+        self._topic_path = self._publisher.topic_path(
             os.environ["PROJECT_ID"], os.environ["TOPIC_NAME"]
         )
 
+    def publish(self, message_data: bytes) -> Any:
+        try:
+            future = self._publisher.publish(self._topic_path, message_data)
+            logger.info(f"Future OK: {str(future)}")
+            return future
 
-def get_future(message_data: bytes, config: Config = Config()):
-    try:
-        future = config.publisher.publish(config.topic_path, message_data)
-        logger.info(f"Future OK: {str(future)}")
-        return future
-
-    except Exception as e:
-        logger.error(f"Error publishing: {e}")
-        raise e
+        except Exception as e:
+            logger.error(f"Error publishing: {e}")
+            raise e
 
 
 @app.get("/generate")
-def generate_alerts(count: int = 3):
+def generate_alerts(count: int):
     ag = AlertGenerator()
+    pub = Publisher()
     try:
-        res = ag.run(count)
-        alerts = res["alerts"]
+        alerts = ag.run(count)["alerts"]
         for alert in alerts:
             message_data = json.dumps(
                 {
@@ -45,10 +45,10 @@ def generate_alerts(count: int = 3):
                     "timestamp": datetime.now().isoformat(),
                 }
             ).encode("utf-8")
-            logger.debug(f"Successfully generated {count} alerts..")
-            future = get_future(message_data)
+            logger.debug(f"successfully generated {count} alerts..")
+            future = pub.publish(message_data)
             message_id = future.result(timeout=10)
-            logger.info(f"Publishing {message_id} with success")
+            logger.info(f"publishing message with id:{message_id} with success")
 
         return {
             "status": "success",
@@ -63,16 +63,6 @@ def generate_alerts(count: int = 3):
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/debug")
-def debug_config():
-    return {
-        "PROJECT_ID": os.environ.get("PROJECT_ID"),
-        "TOPIC_NAME": os.environ.get("TOPIC_NAME"),
-        "topic_path": Config().topic_path,
-        "key": os.environ.get("GOOGLE_API_KEY"),
-    }
 
 
 if __name__ == "__main__":
