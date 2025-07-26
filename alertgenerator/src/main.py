@@ -24,7 +24,7 @@ class Publisher:
     def publish(self, message_data: bytes) -> Any:
         try:
             future = self._publisher.publish(self._topic_path, message_data)
-            logger.info(f"Future OK: {str(future)}")
+            logger.info(f"Published: {str(future)}")
             return future
 
         except Exception as e:
@@ -37,7 +37,9 @@ def generate_alerts(count: int):
     ag = AlertGenerator()
     pub = Publisher()
     try:
+        logger.debug("started alert generation")
         alerts = ag.run(count)["alerts"]
+        logger.info(f"generated {len(alerts)} alerts")
         for alert in alerts:
             message_data = json.dumps(
                 {
@@ -45,10 +47,13 @@ def generate_alerts(count: int):
                     "timestamp": datetime.now().isoformat(),
                 }
             ).encode("utf-8")
-            logger.debug(f"successfully generated {count} alerts..")
+
+            logger.debug(
+                f"publishing started for message: {message_data.decode('utf-8')}"
+            )
             future = pub.publish(message_data)
             message_id = future.result(timeout=10)
-            logger.info(f"publishing message with id:{message_id} with success")
+            logger.info(f"published message with id:{message_id} with success")
 
         return {
             "status": "success",

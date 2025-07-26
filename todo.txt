@@ -1,0 +1,5 @@
+- add data parsing
+- add db
+- load to db
+- structured logs and centralize
+
