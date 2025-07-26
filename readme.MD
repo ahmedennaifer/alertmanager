@@ -4,27 +4,27 @@ WIP
 
 ![diagram](images/diagram.png)
 
-# Infrastructure Components
+# Infrastructure
 
 ## <img src="https://www.svgrepo.com/show/375384/cloud-scheduler.svg" width="20" height="20"> Google Cloud Scheduler
 Triggers alert generation every minute and metrics calculation every 5 minutes.
 
-## <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg" width="20" height="20"> Google Cloud Run (AlertGen)
+## <img src="https://api.iconify.design/logos:google-cloud-run.svg" width="20" height="20"> Google Cloud Run (AlertGen)
 Generates 5 alerts using Gemini API with JSON schema validation and publishes the data to pub/sub.
 
-## <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg" width="20" height="20"> Google Pub/Sub
+## <img src="https://api.iconify.design/logos:google-cloud-pubsub.svg" width="20" height="20"> Google Pub/Sub
 Handles communication between alerts and different services.
 
-## <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg" width="20" height="20"> Google Cloud Functions
+## <img src="https://api.iconify.design/logos:google-cloud-functions.svg" width="20" height="20"> Google Cloud Functions
 Processes incoming alerts with validation, enrichment, and storage.
 
-## <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg" width="20" height="20"> Google Firestore
+## <img src="https://api.iconify.design/logos:google-cloud-firestore.svg" width="20" height="20"> Google Firestore
 KV Store for storing processed and enriched alert data.
 
 ## <img src="https://www.svgrepo.com/show/354327/sendgrid-icon.svg" width="20" height="20"> SendGrid
 Sends email alerts for critical and high severity issues.
 
-## <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/googlecloud/googlecloud-original.svg" width="20" height="20"> Google Cloud Run (Metrics)
+## <img src="https://api.iconify.design/logos:google-cloud-run.svg" width="20" height="20"> Google Cloud Run (Metrics)
 Calculates system metrics from stored alert data.
 
 ## <img src="https://grafana.com/static/img/menu/grafana2.svg" width="20" height="20"> Grafana
