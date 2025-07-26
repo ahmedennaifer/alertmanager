@@ -1,11 +1,10 @@
 WIP
 
-Event-driven system that mocks alerts with an LLM and attemps to monitor and observe them.
+## Event-driven system that mocks alerts with an LLM and attemps to monitor and observe them.
 
 ![diagram](images/diagram.png)
 
-
-# Infrastructure
+# Infrastructure Components
 
 ## <img src="https://www.svgrepo.com/show/375384/cloud-scheduler.svg" width="20" height="20"> Google Cloud Scheduler
 Triggers alert generation every minute and metrics calculation every 5 minutes.
@@ -31,5 +30,5 @@ Calculates system metrics from stored alert data.
 ## <img src="https://grafana.com/static/img/menu/grafana2.svg" width="20" height="20"> Grafana
 Dashboard for monitoring.
 
-## ![Gemini](https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg) Google Gemini API
+## <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" width="20" height="20"> Google Gemini API
 Generation the actual alerts according to the schema in the prompt.
