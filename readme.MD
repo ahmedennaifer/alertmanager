@@ -1,0 +1,3 @@
+- add data parsing
+- add db
+- load to db

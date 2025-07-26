@@ -11,5 +11,5 @@ autoalert.egg-info
 autoalert.egg-info/
 terraform.tfstate
 terraform.tfstate.backup
-
+terraform.tfstate
 

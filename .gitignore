@@ -13,3 +13,4 @@ terraform.tfvars
 .terraform/*
 .terraform.lock.hcl
 autoalert.egg-info/
+terraform.tfstate

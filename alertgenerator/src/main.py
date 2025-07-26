@@ -49,11 +49,12 @@ def generate_alerts(count: int = 3):
             future = get_future(message_data)
             message_id = future.result(timeout=10)
             logger.info(f"Publishing {message_id} with success")
-            return {
-                "status": "success",
-                "count": count,
-                "result": alerts,
-            }
+
+        return {
+            "status": "success",
+            "count": count,
+            "result": alerts,
+        }
     except Exception as e:
         logger.error(f"Error: {e}")
         return {"status": "error", "reason": f"{e}"}
