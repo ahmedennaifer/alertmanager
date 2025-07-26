@@ -7,29 +7,28 @@ Event-driven system that mocks alerts with an LLM and attemps to monitor and obs
 
 # Infra services
 
-## ![Cloud Scheduler](https://cloud.google.com/images/products/scheduler.svg) Google Cloud Scheduler
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Cloud Scheduler
 Triggers alert generation every minute and metrics calculation every 5 minutes.
 
-## ![Cloud Run](https://cloud.google.com/images/products/run.svg) Google Cloud Run (AlertGen)
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Cloud Run (AlertGen)
 Generates 5 alerts using Gemini API with JSON schema validation and publishes the data to pub/sub.
 
-## ![Pub/Sub](https://cloud.google.com/images/products/pubsub.svg) Google Pub/Sub
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Pub/Sub
 Handles communication between alerts and different services.
 
-## ![Cloud Functions](https://cloud.google.com/images/products/functions.svg) Google Cloud Functions
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Cloud Functions
 Processes incoming alerts with validation, enrichment, and storage.
 
-## ![Firestore](https://cloud.google.com/images/products/firestore.svg) Google Firestore
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Firestore
 KV Store for storing processed and enriched alert data.
 
-## ![SendGrid](https://sendgrid.com/wp-content/themes/sgdotcom/pages/resource/brand/2016/SendGrid-Logomark.png) SendGrid
+## <img src="https://assets.sendgrid.com/ui/logos/sendgrid-icon.svg" width="20" height="20"> SendGrid
 Sends email alerts for critical and high severity issues.
 
-
-## ![Cloud Run](https://cloud.google.com/images/products/run.svg) Google Cloud Run (Metrics)
+## <img src="https://www.gstatic.com/devrel-devsite/prod/v84899ba0e7e6da7615da8cfb8e2d0b8ea4f2a537cdfacb5fb0edcc7e0ba47dd59/cloud/images/cloud-logo.svg" width="20" height="20"> Google Cloud Run (Metrics)
 Calculates system metrics from stored alert data.
 
-## ![Grafana](https://grafana.com/static/img/menu/grafana2.svg) Grafana
+## <img src="https://grafana.com/static/img/menu/grafana2.svg" width="20" height="20"> Grafana
 Dashboard for monitoring.
 
 ## ![Gemini](https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg) Google Gemini API
