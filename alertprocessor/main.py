@@ -24,33 +24,29 @@ class FirestoreManager:
         self._db = Client(database=self._database)
 
     def write(self, data: Dict[str, List[Dict[str, str]]]) -> List[str] | None:
+        logger.debug("starting to write data to db..")
         alerts_container = data["alerts"]
-        alerts_list = alerts_container["alerts"]
+        alerts_list = alerts_container["alerts"]  # pyright: ignore
         refs = []
         for alert in alerts_list:
             try:
+                logger.debug(f"trying to insert alert: {alert['alert_id']}")
                 ref = self._db.collection(self._collection).document()
-                print(f"processing alert: {alert['alert_id']}")
                 ref.set(alert)
-                print(f"added alert: {alert['alert_id']} with ref: {ref.id}")
+                logger.debug(f"added alert: {alert['alert_id']} with ref: {ref.id}")
                 refs.append(ref.id)
             except Exception as e:
-                print(f"error writing alert {alert['alert_id']}: {e}")
+                logger.debug(f"error writing alert {alert['alert_id']}: {e}")
                 return None
         return refs
 
 
 def _decode_message(event) -> Dict[str, List[Dict[str, str]]] | None:
     try:
-        logger.debug("decoding event data..")
+        logger.debug("started message decoding")
         data = base64.b64decode(event["data"]).decode("utf-8")
-        logger.debug(f"decoded message data: {data}")
-        logger.debug(f"decoded data type: {type(data)}")
-
+        logger.info("decoded message with success")
         alerts = json.loads(data)
-        logger.debug(f"parsed JSON type: {type(alerts)}")
-        logger.debug(f"parsed JSON content: {alerts}")
-
         return alerts
     except Exception as e:
         logger.error(f"error decoding data: {e}")
@@ -63,8 +59,8 @@ def process_alerts(event, context):
     if data is None:
         logger.error("got empty decoded data")
     try:
-        fm.write(data)  # pyright: ignore
-        return {"status": "success"}
+        refs = fm.write(data)  # pyright: ignore
+        return {"status": "success", "refs": refs}
     except Exception as e:
-        print(f"error in process_alerts: {e}")
+        logger.error(f"error in process_alerts: {e}")
         return {"status": "failed", "error": str(e)}
