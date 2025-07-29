@@ -121,7 +121,7 @@ resource "google_storage_bucket" "function_bucket" {
 data "archive_file" "function_zip" {
   type = "zip"
   output_path = "function-code.zip"
-  source_dir = "../alertprocessor/"
+  source_dir = "../alert_processor/src/"
 }
 
 resource "google_project_iam_member" "cloudbuild_sa_permissions" {
@@ -215,10 +215,6 @@ resource "google_cloud_run_service" "default" {
     }
   }
 
-  traffic {
-    percent         = 100
-    latest_revision = true
-  }
 
   depends_on = [
     google_secret_manager_secret_iam_member.llm_key_access_scheduler,
