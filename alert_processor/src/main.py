@@ -7,11 +7,11 @@ import logging
 
 from typing import Dict, List
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-class FirestoreManager:
+class FSWriter:
     def __init__(
         self, database: str = "alerts-store", collection: str = "alerts_collection"
     ) -> None:
@@ -25,19 +25,31 @@ class FirestoreManager:
 
     def write(self, data: Dict[str, List[Dict[str, str]]]) -> List[str] | None:
         logger.debug("starting to write data to db..")
-        alerts_container = data["alerts"]
-        alerts_list = alerts_container["alerts"]  # pyright: ignore
+        try:
+            alerts_container = data["alerts"]["alerts"]
+        except Exception as e:
+            logger.error(f"Error trying to make container. got : {data}. Error: {e}")
+            raise e
+        try:
+            alerts_list = alerts_container["alerts"]  # pyright: ignore
+        except Exception as e:
+            logger.error(
+                f"Error trying to make alerts_list. got: {alerts_container} Error: {e}"
+            )
+            raise e
         refs = []
         for alert in alerts_list:
             try:
                 logger.debug(f"trying to insert alert: {alert['alert_id']}")
-                ref = self._db.collection(self._collection).document()
+                ref = self._db.collection(self._collection).document(
+                    document_id=alert["alert_id"]
+                )
                 ref.set(alert)
                 logger.debug(f"added alert: {alert['alert_id']} with ref: {ref.id}")
                 refs.append(ref.id)
             except Exception as e:
                 logger.debug(f"error writing alert {alert['alert_id']}: {e}")
-                return None
+                raise e
         return refs
 
 
@@ -54,10 +66,12 @@ def _decode_message(event) -> Dict[str, List[Dict[str, str]]] | None:
 
 
 def process_alerts(event, context):
-    fm = FirestoreManager()
+    fm = FSWriter()
     data = _decode_message(event)
+    logger.info(f"got data: {data}")
     if data is None:
         logger.error("got empty decoded data")
+        return {"status": "failed"}
     try:
         refs = fm.write(data)  # pyright: ignore
         return {"status": "success", "refs": refs}

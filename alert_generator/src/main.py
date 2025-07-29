@@ -10,7 +10,7 @@ import logging
 
 app = FastAPI()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -40,13 +40,14 @@ def generate_alerts(count: int):
         logger.debug("started alert generation")
         alerts = ag.run(count)
         logger.info(f"generated {len(alerts)} alerts")
+        print(f"alerts: {alerts}")
         message_data = json.dumps(
             {
                 "alerts": alerts,
                 "timestamp": datetime.now().isoformat(),
             }
         ).encode("utf-8")
-        logger.debug("publishing started for messages")
+        logger.debug("publishing started for messages..")
         future = pub.publish(message_data)
         message_id = future.result(timeout=10)
         logger.info(f"published message with id:{message_id} with success")

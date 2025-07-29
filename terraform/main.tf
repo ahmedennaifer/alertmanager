@@ -82,7 +82,7 @@ resource "google_cloud_scheduler_job" "job" {
 
   http_target {
     http_method = "GET"
-    uri         = "${google_cloud_run_service.default.status[0].url}/generate?count=5"
+    uri         = "${google_cloud_run_service.default.status[0].url}/generate?count=10"
     oidc_token {
       service_account_email = google_service_account.scheduler_sa.email
       audience = google_cloud_run_service.default.status[0].url

@@ -1,0 +1,10 @@
+Total Active Alerts - count
+Critical Alerts - count
+Services Affected - count unique services
+
+calcs:
+Average Response Time = sum(response_time_ms) / count(alerts)
+Error Rate % = error_count / total_requests * 100
+Alerts Per Hour = count(alerts) / time_window_hours
+Average Resolution Time = sum(resolution_minutes) / count(resolved_alerts)
+Service Health Score = (1 - critical_alerts/total_alerts) * 100

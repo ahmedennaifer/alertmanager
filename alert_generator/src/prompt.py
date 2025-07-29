@@ -1,46 +1,72 @@
 prompt = """
-          You are a system monitoring service that generates realistic infrastructure alerts.
-          Generate {{ number }} different system alerts that could occur in a production environment.
+You are a system monitoring service. Generate infrastructure alerts.
 
-          Alert Types: system failures, security incidents, performance issues, infrastructure problems, database issues, network problems, application errors.
+CRITICAL INSTRUCTIONS:
+1. Generate EXACTLY {{ number }} infrastructure alerts
+2. Respond with ONLY valid JSON - NO markdown, NO explanations, NO other text
+3. Use double quotes ("") only, never single quotes ('')
+4. Start response with { and end with }
+5. Do not include ```json or any formatting
 
-          IMPORTANT: Return ONLY a valid JSON array. Do not include any other text, markdown formatting, or explanations. And always use double-quotes instead of single quotes => "" and not ''.
+REQUIRED JSON OBJECT FORMAT:
+{
+  "alerts": [
+    {
+      "alert_id": ALT-SERVICE-TIMESTAMP-UNIQUEIDENTIFIER
+      "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
+      "service": "payments|auth|orders|search|inventory|notifications",
+      "severity": "critical|high|medium|low",
+      "status": "active|resolved",
+      "response_time_ms": "number_50_to_5000",
+      "error_count": "number_0_to_500",
+      "total_requests": "number_100_to_10000",
+      "resolution_minutes": "number_5_to_300_or_null_if_active"
+    }
+  ]
+}
 
-          Structure:
-          Return a JSON array with alert objects. Each alert must have these fields:
-          - alert_id: unique identifier
-          - severity: "CRITICAL", "HIGH", "MEDIUM", "LOW"
-          - alert_type: type of alert
-          - system_component: affected system/service
-          - description: detailed description of the issue
-          - timestamp: ISO format timestamp
-          - metrics: relevant performance data or error codes
-          - affected_users: estimated number of affected users
+STRICT RULES:
+- Use ONLY the exact values listed for service/severity/status
+- If status="active" then resolution_minutes=null
+- If status="resolved" then resolution_minutes=number
+- error_count MUST be <= total_requests
+- Higher severity correlates with higher error_count and response_time_ms
+- Each alert must have ALL 8 fields
+- No additional fields allowed
 
-          Examples:
-          [
-            {
-              "alert_id": "ALT-20250122-001",
-              "severity": "CRITICAL",
-              "alert_type": "database_failure",
-              "system_component": "user_database_cluster_03",
-              "description": "Primary database node unresponsive, automatic failover initiated but queries timing out",
-              "timestamp": "2025-01-22T14:23:17Z",
-              "metrics": {"response_time_ms": 8500, "error_rate": 0.87, "connection_pool_usage": 0.98},
-              "affected_users": 2400
-            },
-            {
-              "alert_id": "ALT-20250122-002",
-              "severity": "HIGH",
-              "alert_type": "security_incident",
-              "system_component": "api_gateway",
-              "description": "Unusual spike in failed authentication attempts from multiple IP ranges, potential brute force attack",
-              "timestamp": "2025-01-22T14:18:42Z",
-              "metrics": {"failed_attempts_per_minute": 1200, "unique_ips": 47, "success_rate": 0.02},
-              "affected_users": 0
-            }
-          ]
+SEVERITY DISTRIBUTION:
+- critical: 15% (status usually "active", high error rates)
+- high: 25% (mix of active/resolved)
+- medium: 45% (mostly resolved)
+- low: 15% (all resolved)
 
-          Your Task:
-          Generate {{ number }} realistic system alerts in the same JSON format:
-          """
+VALID EXAMPLE OUTPUT:
+{
+  "alerts": [
+    {
+      "alert_id":  "ALT-AUTH-20250129-FTZ263
+      "timestamp": "2025-01-29T14:23:45Z",
+      "service": "payments",
+      "severity": "critical",
+      "status": "active",
+      "response_time_ms": 3400,
+      "error_count": 145,
+      "total_requests": 1500,
+      "resolution_minutes": null
+    },
+    {
+      "alert_id":  "ALT-AUTH-20250129-XYZY33
+      "timestamp": "2025-01-29T14:18:30Z",
+      "service": "auth",
+      "severity": "medium",
+      "status": "resolved",
+      "response_time_ms": 850,
+      "error_count": 12,
+      "total_requests": 2000,
+      "resolution_minutes": 25
+    }
+  ]
+}
+
+RESPOND WITH ONLY THE JSON OBJECT FOR {{ number }} ALERTS:
+"""

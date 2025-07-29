@@ -27,7 +27,7 @@ class AlertGenerator:
         self.pipeline.connect("builder", "llm")
 
     @component.output_types(alerts=List[dict])
-    def run(self, number: int = 5):
+    def run(self, number: int):
         result = self.pipeline.run({"builder": {"number": number}})
         generated_alerts = json.loads(result["llm"]["replies"][0])
         return {"alerts": generated_alerts}
