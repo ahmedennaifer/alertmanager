@@ -1,4 +1,7 @@
 from google.cloud.firestore import Client, FieldFilter
+
+from datetime import datetime
+
 import firebase_admin
 
 from enum import Enum
@@ -47,7 +50,6 @@ METRICS = {
     "services_affected": 0,
     "average_response_time_ms": 0.0,
     "error_rate_percent": 0.0,
-    "alerts_per_hour": 0.0,
     "average_resolution_time_min": 0.0,
     "service_health_score": 0.0,
 }
@@ -132,7 +134,134 @@ class FireStoreMetricsAggregator:
             logger.error(f"error calculating average_response_time_ms: {e}")
             raise e
 
-    def calculate_metrics(self, limit: int = 5) -> None:
+    def _calculate_error_rate_percent(self) -> None:
+        """error_count / total_requests * 100"""
+        logger.debug("calculating error_rate_percent...")
+        try:
+            logger.debug("calculating total error count...")
+            total_error_count = (
+                self._db.collection(self._from_collection)  # pyright: ignore
+                .sum(AlertField.ERROR_COUNT)
+                .get()[0][0]
+                .value
+            )
+            logger.info(
+                f"total error count calculated with success: {total_error_count}"
+            )
+
+            logger.debug("calculating total requests...")
+            total_requests = (
+                self._db.collection(self._from_collection)  # pyright: ignore
+                .sum(AlertField.TOTAL_REQUESTS)
+                .get()[0][0]
+                .value
+            )
+            logger.info(f"total requests calculated with success: {total_requests}")
+
+            if total_requests > 0:
+                res = round((total_error_count / total_requests) * 100, 2)
+            else:
+                res = 0.0
+
+            logger.info(f"error_rate_percent: {res}")
+            self._metrics[MetricField.ERROR_RATE_PERCENT] = res
+            logger.info("metrics table updated with success")
+        except Exception as e:
+            logger.error(f"error calculating error_rate_percent: {e}")
+            raise e
+
+    def _calculate_average_resolution_time(self) -> None:
+        """sum(resolution_minutes) / count(resolved_alerts)"""
+        logger.debug("calculating average_resolution_time_min...")
+        try:
+            logger.debug("calculating total resolution time...")
+            total_resolution_time = (
+                self._db.collection(self._from_collection)  # pyright: ignore
+                .sum(AlertField.RESOLUTION_MINUTES)
+                .get()[0][0]
+                .value
+            )
+            logger.info(
+                f"total resolution time calculated with success: {total_resolution_time}"
+            )
+
+            logger.debug("calculating resolved alerts count...")
+            resolved_alerts = (
+                self._db.collection(self._from_collection)
+                .where(
+                    filter=FieldFilter(AlertField.STATUS, Operator.EQUAL, "resolved")
+                )
+                .count()
+                .get()[0][0]
+                .value
+            )
+            logger.info(f"resolved alerts calculated with success: {resolved_alerts}")
+
+            if resolved_alerts > 0:
+                res = round(total_resolution_time / resolved_alerts, 2)
+            else:
+                res = 0.0
+
+            logger.info(f"average_resolution_time_min: {res}")
+            self._metrics[MetricField.AVERAGE_RESOLUTION_TIME_MIN] = res
+            logger.info("metrics table updated with success")
+        except Exception as e:
+            logger.error(f"error calculating average_resolution_time_min: {e}")
+            raise e
+
+    def _calculate_services_affected(self) -> None:
+        """count unique services"""
+        logger.debug("calculating services_affected...")
+        try:
+            docs = self._db.collection(self._from_collection).stream()
+            unique_services = set()
+            for doc in docs:
+                service = doc.to_dict().get(AlertField.SERVICE)
+                if service:
+                    unique_services.add(service)
+            services_count = len(unique_services)
+            logger.info(f"services_affected: {services_count}")
+            self._metrics[MetricField.SERVICES_AFFECTED] = services_count
+            logger.info("metrics table updated with success")
+        except Exception as e:
+            logger.error(f"error calculating services_affected: {e}")
+            raise e
+
+    def _calculate_service_health_score(self) -> None:
+        """(1 - critical_alerts/total_alerts) * 100"""
+        logger.debug("calculating service_health_score...")
+        try:
+            logger.debug("calculating critical alerts count...")
+            critical_alerts = (
+                self._db.collection(self._from_collection)
+                .where(
+                    filter=FieldFilter(AlertField.SEVERITY, Operator.EQUAL, "critical")
+                )
+                .count()
+                .get()[0][0]
+                .value
+            )
+            logger.info(f"critical alerts calculated with success: {critical_alerts}")
+
+            logger.debug("calculating total alerts count...")
+            total_alerts = (
+                self._db.collection(self._from_collection).count().get()[0][0].value  # pyright: ignore
+            )
+            logger.info(f"total alerts calculated with success: {total_alerts}")
+
+            if total_alerts > 0:
+                res = round((1 - (critical_alerts / total_alerts)) * 100, 2)
+            else:
+                res = 100.0
+
+            logger.info(f"service_health_score: {res}")
+            self._metrics[MetricField.SERVICE_HEALTH_SCORE] = res
+            logger.info("metrics table updated with success")
+        except Exception as e:
+            logger.error(f"error calculating service_health_score: {e}")
+            raise e
+
+    def _calculate_metrics(self, limit: int = 5) -> None:
         """
         Error Rate % = error_count / total_requests * 100
         Alerts Per Hour = count(alerts) / time_window_hours
@@ -158,11 +287,45 @@ class FireStoreMetricsAggregator:
             operator=Operator.EQUAL,
             condition="critical",
         )
+        # services affected
+        self._calculate_services_affected()
         # average response time
         self._calculate_average_response_time()
+        # error rate percent
+        self._calculate_error_rate_percent()
+        # average resolution time
+        self._calculate_average_resolution_time()
+        # service health score
+        self._calculate_service_health_score()
+
+    def write_to_db(self) -> None:
+        logger.debug("writing to db initiated...")
+        logger.debug("calculating metrics...")
+        try:
+            self._calculate_metrics()
+            logger.info("calculated metrics with success")
+        except Exception as e:
+            logger.error(f"error calculating metrics: {e}")
+            raise e
+
+        timestamp = datetime.now()
+        ref = self._db.collection(self._to_collection).document(
+            document_id=str(timestamp)
+        )
+        try:
+            ref.set(self._metrics)
+            logger.info(f"successfully wrote metrics to collection. id : {ref.id}")
+        except Exception as e:
+            logger.error(f"error writing to db: {e}")
+            raise e
 
 
-if __name__ == "__main__":
-    r = FireStoreMetricsAggregator()
-    r.calculate_metrics()
-    print(r.metrics)
+def compute_metrics(event, context):
+    logger.info("starting metrics calculation function...")
+    try:
+        r = FireStoreMetricsAggregator()
+        r.write_to_db()
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"error in compute_metrics: {e}")
+        return {"status": "failed", "error": str(e)}
