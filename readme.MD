@@ -1,4 +1,6 @@
-## WIP
+## TODO:
+- find grafana alternative that's compatible with firestore
+- make dashboards
 
 ### Event-driven system that mocks alerts with an LLM and attemps to monitor and observe them.
 
