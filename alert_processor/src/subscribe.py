@@ -2,10 +2,6 @@ from google.cloud.pubsub_v1 import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
 
 import os
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 
 def subscribe():

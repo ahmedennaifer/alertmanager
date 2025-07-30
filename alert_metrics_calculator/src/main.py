@@ -3,18 +3,13 @@ import firebase_admin
 
 from enum import Enum
 
-from typing import Any, Dict
+from typing import Dict
 
 import logging
-
-from proto import Field
 
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-
-# TODO: better read, more read features, etc..
 
 
 class Operator(str, Enum):
@@ -46,7 +41,7 @@ class MetricField(str, Enum):
     SERVICE_HEALTH_SCORE = "service_health_score"
 
 
-METRICS_SCHEMA = {
+METRICS = {
     "total_active_alerts": 0,
     "critical_alerts": 0,
     "services_affected": 0,
@@ -64,7 +59,7 @@ class FireStoreMetricsAggregator:
         database: str = "alerts-store",
         from_collection: str = "alerts_collection",
         to_collection: str = "metrics",
-        metrics_schema: Dict[str, float] = METRICS_SCHEMA,
+        metrics: Dict[str, float] = METRICS,
     ) -> None:
         if not firebase_admin._apps:
             firebase_admin.initialize_app()
@@ -73,27 +68,27 @@ class FireStoreMetricsAggregator:
         self._to_collection: str = to_collection
         self._database: str = database
         self._db: Client = self._get_client()
-        self._metrics_schema: Dict[str, float] = metrics_schema
+        self._metrics: Dict[str, float] = metrics
 
     @property
     def metrics(self):
-        return self._metrics_schema
+        return self._metrics
 
     def _get_client(self) -> Client:
-        logger.debug("Setting up connection...")
+        logger.debug("setting up connection...")
         try:
             db = Client(database=self._database)
             logger.info("retrieved db with success")
             return db
         except Exception as e:
-            logger.error(f"Error retrieving database: {e}")
+            logger.error(f"error retrieving database: {e}")
             raise e
 
     def _calculate_single_metric(
         self, metric: MetricField, field: AlertField, operator: Operator, condition: str
     ) -> None:
         logger.debug(
-            f"Started calculation for metric {metric} with filters: {field + operator + condition}"
+            f"started calculation for metric {metric} with filters: {field + operator + condition}"
         )
         try:
             hits = (
@@ -102,19 +97,19 @@ class FireStoreMetricsAggregator:
                 .stream()
             )
             len_hits = len(list(hits))
-            logger.info(f"Found {len_hits}..")
-            self._metrics_schema[metric] = len_hits
+            logger.info(f"found {len_hits} documents for {metric}..")
+            self._metrics[metric] = len_hits
         except Exception as e:
             logger.error(
-                f"Error retrieving documents for metric {metric} with: {field + operator + condition}. Error {e} "
+                f"error retrieving documents for metric {metric} with: {field + operator + condition}. Error {e} "
             )
             raise e
 
     def _calculate_average_response_time(self) -> None:
         """total response time / total alerts"""
-        logger.debug("Calculating average_response_time_ms...")
+        logger.debug("ealculating average_response_time_ms...")
         try:
-            logger.debug("calculation the total reponse time..")
+            logger.debug("calculating the total reponse time..")
             total_response_time_ms = (
                 self._db.collection(self._from_collection)  # pyright: ignore
                 .sum(AlertField.RESPONSE_TIME_MS)
@@ -122,34 +117,31 @@ class FireStoreMetricsAggregator:
                 .value
             )
             logger.info(
-                f"Total response time calculated with success: {total_response_time_ms}"
+                f"total response time calculated with success: {total_response_time_ms}"
             )
-            logger.debug("Calculating total alerts..")
+            logger.debug("calculating total alerts..")
             total_alerts = (
                 self._db.collection(self._from_collection).count().get()[0][0].value  # pyright: ignore
             )
-            logger.info(f"Total alerts calculated with success: {total_alerts}")
-            res = total_response_time_ms / total_alerts
-            logger.info(f"average_response_time_ms: {round(res, 2)}")
-            self._metrics_schema[MetricField.AVERAGE_RESPONSE_TIME_MS] = res
+            logger.info(f"total alerts calculated with success: {total_alerts}")
+            res = round(total_response_time_ms / total_alerts, 2)
+            logger.info(f"average_response_time_ms: {res}")
+            self._metrics[MetricField.AVERAGE_RESPONSE_TIME_MS] = res
             logger.info("metrics table updated with success")
         except Exception as e:
-            logger.error(f"Error calculating average_response_time_ms: {e}")
+            logger.error(f"error calculating average_response_time_ms: {e}")
             raise e
 
     def calculate_metrics(self, limit: int = 5) -> None:
         """
-        Total Active Alerts - count
-        Critical Alerts - count
-
-
         Error Rate % = error_count / total_requests * 100
         Alerts Per Hour = count(alerts) / time_window_hours
         Average Resolution Time = sum(resolution_minutes) / count(resolved_alerts)
         Service Health Score = (1 - critical_alerts/total_alerts) * 100
         """
-        logger.debug(f"Trying to retrieve {limit} documents...")
+        logger.debug(f"trying to retrieve {limit} documents...")
 
+        # total active alerts
         total_active_alerts_metric = MetricField.TOTAL_ACTIVE_ALERTS
         self._calculate_single_metric(
             metric=total_active_alerts_metric,
@@ -158,6 +150,7 @@ class FireStoreMetricsAggregator:
             condition="active",
         )
 
+        # critical alerts
         critical_alerts_metric = MetricField.CRITICAL_ALERTS
         self._calculate_single_metric(
             metric=critical_alerts_metric,

@@ -26,15 +26,15 @@ class FSWriter:
     def write(self, data: Dict[str, List[Dict[str, str]]]) -> List[str] | None:
         logger.debug("starting to write data to db..")
         try:
-            alerts_container = data["alerts"]["alerts"]
+            alerts_container = data["alerts"]["alerts"]  # pyright: ignore
         except Exception as e:
-            logger.error(f"Error trying to make container. got : {data}. Error: {e}")
+            logger.error(f"error trying to make container. got : {data}. Error: {e}")
             raise e
         try:
             alerts_list = alerts_container["alerts"]  # pyright: ignore
         except Exception as e:
             logger.error(
-                f"Error trying to make alerts_list. got: {alerts_container} Error: {e}"
+                f"error trying to make alerts_list. got: {alerts_container} Error: {e}"
             )
             raise e
         refs = []
