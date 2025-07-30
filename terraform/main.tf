@@ -73,6 +73,73 @@ resource "google_cloud_run_service_iam_member" "scheduler_invoker" {
   depends_on = [google_cloud_run_service.default]
 }
 
+data "archive_file" "metrics_function_zip" {
+  type = "zip"
+  output_path = "metrics-function-code.zip"
+  source_dir = "../alert_metrics_calculator/src/"
+}
+
+resource "google_storage_bucket_object" "metrics_function_source" {
+  name = "metrics-function-source-${data.archive_file.metrics_function_zip.output_md5}.zip"
+  bucket = google_storage_bucket.function_bucket.name
+  source = data.archive_file.metrics_function_zip.output_path
+}
+
+resource "google_service_account" "metrics_function_sa" {
+  account_id   = "metrics-function-sa"
+}
+
+resource "google_project_iam_member" "metrics_function_firestore_user" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.metrics_function_sa.email}"
+}
+
+resource "google_cloudfunctions_function" "calculate_metrics" {
+  name = "calculate_metrics"
+  runtime = "python310"
+  region = var.location
+
+  source_archive_bucket = google_storage_bucket.function_bucket.name
+  source_archive_object = google_storage_bucket_object.metrics_function_source.name
+
+
+  trigger_http = true
+
+
+  entry_point = "calculate_metrics"
+  service_account_email = google_service_account.metrics_function_sa.email
+  timeout = 540
+  available_memory_mb = 256
+}
+
+resource "google_cloudfunctions_function_iam_member" "metrics_scheduler_invoker" {
+  project        = google_cloudfunctions_function.calculate_metrics.project
+  region         = google_cloudfunctions_function.calculate_metrics.region
+  cloud_function = google_cloudfunctions_function.calculate_metrics.name
+  role           = "roles/cloudfunctions.invoker"
+  member         = "serviceAccount:${google_service_account.scheduler_sa.email}"
+}
+
+resource "google_cloud_scheduler_job" "metrics_job" {
+  name       = "metrics-calculation-job"
+  schedule   = "*/5 * * * *"
+  region     = "europe-west6"
+  time_zone  = "UTC"
+  depends_on = [google_cloudfunctions_function.calculate_metrics, google_cloudfunctions_function_iam_member.metrics_scheduler_invoker]
+
+  http_target {
+    http_method = "POST"
+    uri         = google_cloudfunctions_function.calculate_metrics.https_trigger_url
+    oidc_token {
+      service_account_email = google_service_account.scheduler_sa.email
+      audience = google_cloudfunctions_function.calculate_metrics.https_trigger_url
+    }
+  }
+}
+
+
+
 resource "google_cloud_scheduler_job" "job" {
   name       = "test-job"
   schedule   = "*/1 * * * *"
